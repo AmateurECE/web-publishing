@@ -1,0 +1,24 @@
+%YAML 1.2
+---
+PageData:
+  type: list
+
+# The index page
+WebIndex:
+  type: string
+
+# List of books
+Books:
+  type: dict
+
+BookExclude:
+  type: list
+  schema:
+    type: string
+
+# List of files to exclude: ['']
+BuildExclude:
+  type: list
+
+DocumentRoot:
+  type: string
