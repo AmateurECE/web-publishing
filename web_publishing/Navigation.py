@@ -7,7 +7,7 @@
 #
 # CREATED:          07/18/2020
 #
-# LAST EDITED:      02/27/2021
+# LAST EDITED:      02/28/2021
 ###
 
 import os
@@ -24,7 +24,7 @@ NAV_PROLOGUE = """
       <div>
         <ul>
 """
-# TODO: Add link text to makefile_config
+
 BOOK_LINK = """
           <li>
             <p class="nav-book-link-text">
@@ -32,6 +32,7 @@ BOOK_LINK = """
             </p>
           </li>
 """
+
 NAV_EPILOGUE = """
         </ul>
       </div>
@@ -86,7 +87,7 @@ def getFolders(titles):
             folders[folderName][parts[1]] = {'link': link, 'title': title}
     return folders
 
-def getNavigation(titles, book=''):
+def getNavigation(titles, book):
     """Obtain the markup for the navigation"""
     navigation = NAV_PROLOGUE
     folders = getFolders(titles)
@@ -106,11 +107,9 @@ def getNavigation(titles, book=''):
 
 def main():
     parser = argparse.ArgumentParser()
-    # TODO: Need to change this to support multiple books
     parser.add_argument(
-        '--book', '-b',
-        help=('The path of the collected works of this repository--this file'
-              ' is treated specially'), default='')
+        '--book', '-b', default=False, action='store_true',
+        help=('Enables generation of the book page link in navigation'))
     parser.add_argument(
         '--output', '-o',
         help=('The path of the file to which to write the navigation data'),

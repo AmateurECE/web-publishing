@@ -7,7 +7,7 @@
 #
 # CREATED:          02/23/2021
 #
-# LAST EDITED:      02/27/2021
+# LAST EDITED:      02/28/2021
 ###
 
 from datetime import datetime
@@ -45,14 +45,13 @@ class Makefile:
     def addRule(self, newRule):
         self.rules.append(newRule)
 
-    def appendToVariable(self, variableName, value, assignmentType=''):
+    def appendToVariable(self, variableName, value):
         # assignmentType can be '', ':', '::', '?', '+', or others.
         # We automatically switch to using '+' after the first assignment.
         if variableName in self.variables:
             self.variables[variableName]['values'].append(value)
         else:
-            self.variables[variableName] = {
-                'values': [value], 'assignmentType': assignmentType}
+            self.variables[variableName] = {'values': [value]}
 
     def variableIsSet(self, variableName):
         return variableName in self.variables
@@ -67,7 +66,7 @@ class Makefile:
         self.appendToVariable(copyFileVar, target)
         self.addRule(getCopyRule(target, prerequisite))
 
-    def write(self, fileDescriptor, assignmentType=''):
+    def write(self, fileDescriptor):
         fileDescriptor.write(getPreamble())
 
         # Write the variables

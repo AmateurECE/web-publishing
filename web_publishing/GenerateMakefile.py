@@ -26,11 +26,11 @@ from .Locator import Locator
 # TODO: Copyright notice and table of contents for the book?
 # TODO: Validate books
 BUILD_RULE_RECIPE = """
-	wp-navigation -b '{}' -d '{}' $(htmlFiles)
+	wp-navigation{} -d '{}' $(htmlFiles)
 	middleman build
 """
-def getBuildRuleRecipe(bookLink='', buildDirectory='.'):
-    return BUILD_RULE_RECIPE.format(bookLink, buildDirectory)
+def getBuildRuleRecipe(book=False, buildDirectory='.'):
+    return BUILD_RULE_RECIPE.format(' -b' if book else '', buildDirectory)
 
 DEPLOY_RULE = """
 host={}
@@ -104,6 +104,8 @@ def setUpMakefile(config, copyFiles):
     makefile = Makefile()
     makefile.setDefaultRuleTarget('build')
     makefile.setDefaultRuleRecipe(getBuildRuleRecipe(
+        # TODO: Enable book link generation
+        # book=bool(config['Books']),
         buildDirectory=config['BuildDirectory']))
     makefile.addRule(getDeployRule(
         host=config['Host'], remotePath=config['RemotePath']))
