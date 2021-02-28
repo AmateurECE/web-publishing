@@ -7,11 +7,12 @@
 #
 # CREATED:          02/24/2021
 #
-# LAST EDITED:      02/27/2021
+# LAST EDITED:      02/28/2021
 ###
 
-import os
 import logging
+import os
+import re
 
 class WebFile:
     def __init__(self, filePath):
@@ -176,8 +177,28 @@ class LaTeXFile(WebFile):
         self.files['erb'] = os.path.join(self.conf['erbpath'],
                                     self.withoutExt + '.html' + '.erb')
 
+    def addCopyRulesForSources(self, makefile):
+        parentDir, basenameNoExt = os.path.split(self.withoutExt)
+        sourcesDirPrerequisite = os.path.join(
+            parentDir, self.conf['sourcesdirprefix'] + basenameNoExt)
+        if not os.path.isdir(sourcesDirPrerequisite):
+            return
+
+        # Add sourcesDirPrerequisite to additional prerequisites
+        logging.info('Copying sources dir %s', sourcesDirPrerequisite)
+        for dirpath, _, filenames in os.walk(sourcesDirPrerequisite):
+            for filename in filenames:
+                target = os.path.join(
+                    self.conf['build'],
+                    self.conf['sourcesdirprefix'] + basenameNoExt,
+                    filename)
+                self.files['additional-prerequisites'].append(target)
+                makefile.addCopyRule(target,
+                    os.path.join(dirpath, filename))
+
     def addPageRules(self, makefile):
         # Add ERB Rule
+        # TODO: Add .css file as a prerequisite for ERB file
         if '$(erbFiles)' not in makefile.getDefaultRulePrerequisites():
             makefile.getDefaultRulePrerequisites().append('$(erbFiles)')
         makefile.appendToVariable('erbFiles', self.files['erb'])
@@ -194,31 +215,50 @@ class LaTeXFile(WebFile):
             htmlPrerequisites.append(tex4htConfigTarget)
 
         # Grab the sources dir for this file
-        parentDir, basenameNoExt = os.path.split(self.withoutExt)
-        sourcesDirTarget = os.path.join(
-            self.conf['build'], self.conf['sourcesdirprefix'] + basenameNoExt)
-        sourcesDirPrerequisite = os.path.join(
-            parentDir, self.conf['sourcesdirprefix'] + basenameNoExt)
-        if os.path.isdir(sourcesDirPrerequisite):
-            logging.info('Copying sources dir %s', sourcesDirPrerequisite)
-            makefile.addCopyRule(sourcesDirTarget, sourcesDirPrerequisite)
-        # TODO: Add sourcesDirPrerequisite to additional prerequisites
-        # TODO: Detect whether this file depends on other LaTeX files in the
-        #       project (e.g. base .tex files (subfiles), .cls or .sty files)
-        #       and add them to additional prerequisites
+        self.addCopyRulesForSources(makefile)
 
         # Add HTML rules
         makefile.appendToVariable('htmlFiles', self.files['html'])
         makefile.addRule(generateHtmlRule(
             self.files['html'], self.getPath(), self.conf['build'],
-            self.conf['tex4htconfig'], *htmlPrerequisites))
+            self.conf['tex4htconfig'], *htmlPrerequisites,
+            *self.files['additional-prerequisites']))
+
+    @classmethod
+    def tryGetDependencyFrom(cls, line, command, argumentNumber,
+                             fileExtension):
+        if command in line:
+            components = re.findall(r"[^{}\[\]]+", line)
+            if argumentNumber >= len(components):
+                return []
+            potentialDependency = components[argumentNumber] + fileExtension
+            if os.path.isfile(potentialDependency):
+                logging.info('Discovered dependency %s', potentialDependency)
+                return [potentialDependency]
+            return []
+        return []
 
     def getProjectDependencies(self):
-        # TODO: Detect whether this file depends on other LaTeX files in the
-        #       project (e.g. base .tex files (subfiles), .cls or .sty files)
-        pass
+        with open(self.getPath(), 'r') as latexFile:
+            deps = []
+            for line in latexFile.readlines():
+                deps.extend(self.tryGetDependencyFrom(
+                    line, '\\documentclass', 1, '.cls'))
+                deps.extend(self.tryGetDependencyFrom(
+                    line, '\\documentclass', 2, '.cls'))
+                deps.extend(self.tryGetDependencyFrom(
+                    line, '\\documentclass', 1, ''))
+                deps.extend(self.tryGetDependencyFrom(
+                    line, '\\subfile', 1, '.tex'))
+            return deps
 
     def addRules(self, makefile):
+        # Add Project Dependencies
+        for filename in self.getProjectDependencies():
+            target = os.path.join(self.conf['build'], filename)
+            self.files['additional-prerequisites'].append(target)
+            makefile.addCopyRule(target, filename)
+
         if not self.conf['isbook']:
             self.addPageRules(makefile)
 
@@ -230,7 +270,8 @@ class LaTeXFile(WebFile):
                 'pdflatexFlags', getPdflatexFlags(
                     minted=self.conf['minted'],
                 ))
-        makefile.addRule(generatePdfRule(self.files['pdf'], self.getPath(),
-                                         self.conf['build']))
+        makefile.addRule(generatePdfRule(
+            self.files['pdf'], self.getPath(), self.conf['build'],
+            *self.files['additional-prerequisites']))
 
 ###############################################################################

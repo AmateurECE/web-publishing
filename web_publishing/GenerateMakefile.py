@@ -7,7 +7,7 @@
 #
 # CREATED:          07/18/2020
 #
-# LAST EDITED:      02/27/2021
+# LAST EDITED:      02/28/2021
 ###
 
 import argparse
@@ -25,7 +25,6 @@ from .Locator import Locator
 # TODO: Allow attachment of raw script files
 # TODO: Copyright notice and table of contents for the book?
 # TODO: Validate books
-# TODO: Code does not work
 BUILD_RULE_RECIPE = """
 	wp-navigation -b '{}' -d '{}' $(htmlFiles)
 	middleman build
@@ -94,7 +93,7 @@ CONFIG_DEFAULTS = {
     'MiddlemanDirectory': 'source',
     'Host': '',
     'RemotePath': '',
-    'Books': [],
+    'Books': {},
     'BookExclude': [],
     'WebIndex': '',
     'BookRoot': './',
@@ -161,6 +160,7 @@ def main():
     # Obtain the configuration
     config = applyConfiguration(
         getConfiguration(args.config_file), CONFIG_DEFAULTS)
+    logging.info(config)
 
     # Set up the Makefile
     if args.copy_files:
@@ -173,7 +173,7 @@ def main():
     locator = Locator(buildExclude=buildExclude + config['BuildExclude'])
     generateMakefile(
         makefile,
-        bookFiles=config['Books'].keys(),
+        bookFiles=list(config['Books'].keys()),
         latexFiles=locator.locate(config['DocumentRoot'], '.tex'),
         config=config
     )
