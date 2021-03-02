@@ -11,16 +11,14 @@
 ###
 
 import argparse
-from importlib import resources
 import logging
 import os
-
-import yaml
-from cerberus import Validator
 
 from .Files import LaTeXFile
 from .Makefile import Makefile
 from .Locator import Locator
+from .Configuration import getConfiguration, applyConfiguration, \
+    CONFIG_DEFAULTS
 
 # TODO: Allow attachment of raw script files
 # TODO: Copyright notice and table of contents for the book?
@@ -58,47 +56,6 @@ def verifyBookMain(bookMain, latexFiles):
                 logging.warning(('%s is not included in %s and not excluded'
                                  ' in makefile_config.py'),
                                 latexFile, bookMain)
-
-def getConfiguration(configurationFileName):
-    try:
-        with open(configurationFileName) as configurationFile:
-            document = yaml.load(''.join(configurationFile.readlines()),
-                                 Loader=yaml.FullLoader)
-        logging.info('Using configuration file.')
-        documentSchema = yaml.load(resources.read_text(
-            'web_publishing', 'schema.yaml'), Loader=yaml.FullLoader)
-        validator = Validator(schema=documentSchema)
-        validator.validate(document)
-        return document
-    except FileNotFoundError as e:
-        logging.warning(str(e))
-    return {}
-
-def applyConfiguration(readConfig, defaultConfig):
-    for key in defaultConfig:
-        if key not in readConfig:
-            if isinstance(defaultConfig[key], dict):
-                applyConfiguration(readConfig[key], defaultConfig[key])
-            readConfig[key] = defaultConfig[key]
-    return readConfig
-
-CONFIG_DEFAULTS = {
-    'DocumentRoot': './',
-    'BuildDirectory': '.pdflatex',
-    'ServerPDFPath': 'pdf',
-    'ServerKeepPDFPath': False,
-    'PageData': [],
-    'minted': True,
-    'BuildExclude': [],
-    'MiddlemanDirectory': 'source',
-    'Host': '',
-    'RemotePath': '',
-    'Books': {},
-    'BookExclude': [],
-    'WebIndex': '',
-    'BookRoot': './',
-    'CopyFiles': [],
-}
 
 def setUpMakefile(config, copyFiles):
     makefile = Makefile()

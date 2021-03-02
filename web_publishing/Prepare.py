@@ -8,13 +8,17 @@
 #
 # CREATED:          07/12/2020
 #
-# LAST EDITED:      02/26/2021
+# LAST EDITED:      03/01/2021
 ###
 
 import argparse
 
 from bs4 import BeautifulSoup
 
+# TODO: Create intermediate build artifacts that contain navigation?
+#    wp-genmakefile creates *.prepare.txt files which contain YAML erb headers
+#    this script just finds all of them and generates one ERB for one HTML and
+#    one prepare.txt
 def getPdfPath(htmlPath):
     """Obtain the path of the PDF from the path of the HTML file"""
     return f'pdf/{htmlPath.replace("html","pdf")}'

@@ -7,13 +7,16 @@
 #
 # CREATED:          07/18/2020
 #
-# LAST EDITED:      02/28/2021
+# LAST EDITED:      03/01/2021
 ###
 
 import os
 import argparse
 from bs4 import BeautifulSoup
 from .Files import WebFile
+
+# TODO: This script should take a files_list.txt as an argument
+#    it will then parse this file and generate the navigation from it.
 
 NAV_PROLOGUE = """
 <nav>
